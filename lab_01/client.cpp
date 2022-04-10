@@ -19,8 +19,8 @@ using namespace std;
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#define SERVER_ADDRESS "127.0.0.1" /* server IP */
-#define PORT 8080
+#define SERVER_ADDRESS "5.253.235.219" /* server IP */
+#define PORT 45011
 
 /* Test sequences */
 char buf_tx[] = "Hello server. I am a client";
