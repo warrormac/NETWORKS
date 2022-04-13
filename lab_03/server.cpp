@@ -26,8 +26,60 @@
 
 /*Multi threading*/
 #include <thread>
+#include<map>
+#include <bits/stdc++.h>
 
 using namespace std;
+
+
+map<int , string> room;
+
+void broadcast(string msg){
+    int n;
+    char tamano[100];
+    for (map<int,string>::iterator it=room.begin(); it!=room.end(); ++it){
+        string a = "M";
+        sprintf(tamano,"%03d",msg.size());
+        tamano[4]='\0';
+        string t = tamano;
+        string buffer = a + t + msg ;
+        n = write(it->first, buffer.c_str(), buffer.size());
+        cout << "Protocolo:" << buffer << endl;
+    }
+}
+bool isSecretMsg(string msg){
+    std::size_t found = msg.find(',');
+    if (found!=std::string::npos) return 1;
+    return 0;
+}
+
+void sendMsgByNick(string nick , string msg){
+    int n;
+    char tamano[100];
+    for (auto it=room.begin(); it!=room.end(); ++it){
+        if(it->second == nick){
+            string a = "M";
+            sprintf(tamano,"%03d",msg.size());
+            tamano[4]='\0';
+            string t = tamano;
+            string buffer = a + t + msg ;
+            n = write(it->first, buffer.c_str(), buffer.size());
+            cout << "Secret Protocolo:" << buffer << endl;
+        }
+    }
+}
+
+
+string decodeMsg(string txt){
+    string delimiter = ",";
+    string nick = txt.substr(0,txt.find(delimiter));
+    nick.erase(remove(nick.begin(),nick.end(),' '),nick.end());
+    string msg = txt.substr(txt.find(delimiter)+1,txt.size());
+    msg = "\n[ " + nick + " ] <private>: " + msg + "\n" ;
+    sendMsgByNick(nick , msg);
+    return msg;
+}
+
 
 
 inline string zeros(int num){
@@ -38,10 +90,10 @@ inline string zeros(int num){
 void READ(int connfd)
 {
 
-
     char buff_rx[1010];
     char nickname[1000];
     int n ;
+    string message;
 
     for(;;)
     {
@@ -52,16 +104,30 @@ void READ(int connfd)
             int size = atoi(&buff_rx[1]);
             bzero(nickname,1000); //clean buffer
             read(connfd,nickname,size);
-            printf("\n %s enter the chat \n" ,nickname);
+            room[connfd] = nickname;    //add client
+            message = "\n " + room[connfd] + "enter the chat\n";
+            cout<<message;
+            broadcast(message);
         }
         else if(buff_rx[0] == 'M'){
+
             int size = atoi(&buff_rx[1]);
             bzero(buff_rx,1010); //clean buffer
             read(connfd,buff_rx,size);
-            printf("\n[ %s ] : %s \n" ,nickname,buff_rx);
+            if(isSecretMsg(buff_rx)){
+                message = decodeMsg(buff_rx);
+            }else{
+                message = "\n[" + room[connfd] + " ] : " + buff_rx + "\n" ;
+                broadcast(message);
+            }
+            cout<<message;
+
         }
         else if(buff_rx[0] == 'Q'){
-            cout<<"\n "<<nickname<<"left the chat\n";
+            message = "\n" + room[connfd] + "left the chat\n";
+            cout<<message;
+            write(connfd,"Q000",4);
+            broadcast(message);
             break;
         }
 
@@ -70,7 +136,7 @@ void READ(int connfd)
     // receptions and transmissions will be disallowed.
     shutdown(connfd , SHUT_RDWR);
     close(connfd);
-    
+    cout << "Read_thread termino.\n";
 }
 
 
@@ -106,18 +172,13 @@ void WRITE(int connfd){
 
 
 
-
-
-
 int main() /* input arguments are not used */
 {
     int sockfd, connfd; /* listening socket and connection socket file descriptors */
     unsigned int len;   /* length of client address */
     struct sockaddr_in servaddr, client;
 
-    int len_rx, len_tx = 0;                                   /* received and sent length, in bytes just initialize */
-    char buff_tx[BUF_SIZE] = "Hello client, I am the server"; /* message to client*/
-    char buff_rx[BUF_SIZE];                                   /* buffers for reception  */
+
 
     /* socket creation */
     sockfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -136,7 +197,7 @@ int main() /* input arguments are not used */
 
     /* assign IP, SERV_PORT, IPV4 */
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr(SERV_HOST_ADDR);
+    servaddr.sin_addr.s_addr = INADDR_ANY;
     servaddr.sin_port = htons(SERV_PORT);
 
     /* Bind socket */
@@ -151,7 +212,7 @@ int main() /* input arguments are not used */
     }
 
     /* Listen */
-    if ((listen(sockfd, BACKLOG)) != 0)
+    if ((listen(sockfd, 10)) != 0)
     {
         fprintf(stderr, "[SERVER-error]: socket listen failed. %d: %s \n", errno, strerror(errno));
         return -1;
@@ -173,10 +234,9 @@ int main() /* input arguments are not used */
         }
         else
         {
-            thread th1(READ, connfd);
-            thread th2(WRITE, connfd);
-            th1.join();
-            th2.join();
+            thread (READ, connfd).detach();
+            thread (WRITE, connfd).detach();
+
         }
 
     }

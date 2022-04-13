@@ -52,7 +52,8 @@ void READ(int sockfd){
             int size = atoi(&buff_rx[1]);
             bzero(buff_rx,1010); //clean buffer
             read(sockfd,buff_rx,size);
-            printf("\n[ SERVER ] : %s\n" ,buff_rx);
+            cout<<"\n "<<buff_rx<<" \n";
+//            printf("\n[ SERVER ] : %s\n" ,buff_rx);
         }
         if(buff_rx[0] == 'Q'){
             printf("\n server left the chat \n");
