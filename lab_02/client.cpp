@@ -25,11 +25,13 @@ using namespace std;
 #include <thread>
 
 #define SERVER_ADDRESS "127.0.0.1" /* server IP */
-#define PORT 8080  
+#define PORT 8080
 
-/* Test sequences */
-char buf_tx[] = "Hello server. I am a client";
-char buf_rx[100]; /* receive buffer */
+//#define PORT 45011            /* port */
+//#define SERVER_ADDRESS "5.253.235.219" /* IP, only IPV4 support  */
+
+
+
 
 inline string zeros(int num){
     string strNum = to_string(num);
@@ -41,7 +43,7 @@ void READ(int sockfd){
 
     char buff_rx[1010];
 
-    for (;;) {
+    for(;;){
 
         bzero(buff_rx,1010); //clean buffer
         read(sockfd , buff_rx , 4); // read action and size
@@ -50,24 +52,23 @@ void READ(int sockfd){
             int size = atoi(&buff_rx[1]);
             bzero(buff_rx,1010); //clean buffer
             read(sockfd,buff_rx,size);
-            printf("\n[ SERVER ] : %s" ,buff_rx);
+            printf("\n[ SERVER ] : %s\n" ,buff_rx);
         }
         if(buff_rx[0] == 'Q'){
-            printf("\n server left the chat ");
-            // receptions and transmissions will be disallowed.
-            shutdown(sockfd , SHUT_RDWR);
-            close(sockfd);
+            printf("\n server left the chat \n");
             break;
         }
-
     }
 
+    shutdown(sockfd, SHUT_RDWR);
+    close(sockfd);
+
+    cout << "\nRead_thread termino.\n";
 }
 
 
 
 void WRITE(int sockfd){
-
 
     string buff_tx;
     string nickname;
@@ -75,22 +76,24 @@ void WRITE(int sockfd){
     cout<<"\nEnter your nickname > ";
     getline(cin,nickname);
 
+
     buff_tx = "N" + zeros(nickname.size()) + nickname;
     int n = write(sockfd, buff_tx.c_str(), buff_tx.size());
+//    cout << "\nProtocolo:" << buff_tx<<endl ;
     if (n < 0) perror("ERROR writing to server");
 
-    for(;;)
-    {
+
+    do{
 
         //get message
-        cout<<"\n[ "<<nickname<<" ] > ";
+
         getline(cin,buff_tx);
 
         //Quit Action
         if(buff_tx == "Q"){
-            // receptions and transmissions will be disallowed
-            shutdown(sockfd, SHUT_RDWR);
-            close(sockfd);
+            buff_tx += "000" ;
+//            cout << "\nProtocolo:" << buff_tx<<endl ;
+            write(sockfd,buff_tx.c_str(),4);
             break;
         }
 
@@ -98,9 +101,13 @@ void WRITE(int sockfd){
         buff_tx = "M" + zeros(buff_tx.size()) + buff_tx;
         int n = write(sockfd, buff_tx.c_str(), buff_tx.size());
         if(n < 0) perror("ERROR writing to server");
+//        cout << "\nProtocolo:" << buff_tx ;
 
-    }
+    }while(true);
 
+    shutdown(sockfd,SHUT_RDWR);
+    close(sockfd);
+    cout << "\nWrite_thread termino.\n";
 
 }
 
@@ -117,7 +124,7 @@ int main()
     struct sockaddr_in servaddr;
 
     /* Socket creation */
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    sockfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sockfd == -1)
     {
         printf("CLIENT: socket creation failed...\n");
@@ -147,14 +154,11 @@ int main()
 
 
 
-
     thread th1(READ, sockfd);
     thread th2(WRITE, sockfd);
 
     th1.join();
     th2.join();
 
-
-    /* close the socket */
-    close(sockfd);
+    return 0;
 }

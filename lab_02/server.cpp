@@ -19,8 +19,10 @@
 /* server parameters */
 #define SERV_PORT 8080             /* port */
 #define SERV_HOST_ADDR "127.0.0.1" /* IP, only IPV4 support  */
+//#define SERV_PORT 45011            /* port */
+//#define SERV_HOST_ADDR "5.253.235.219" /* IP, only IPV4 support  */
 #define BUF_SIZE 100               /* Buffer rx, tx max size  */
-#define BACKLOG 5                  /* Max. client pending connections  */
+#define BACKLOG 10                  /* Max. client pending connections  */
 
 /*Multi threading*/
 #include <thread>
@@ -36,8 +38,10 @@ inline string zeros(int num){
 void READ(int connfd)
 {
 
+
     char buff_rx[1010];
     char nickname[1000];
+    int n ;
 
     for(;;)
     {
@@ -48,50 +52,54 @@ void READ(int connfd)
             int size = atoi(&buff_rx[1]);
             bzero(nickname,1000); //clean buffer
             read(connfd,nickname,size);
-            printf("\n %s enter the chat " ,nickname);
+            printf("\n %s enter the chat \n" ,nickname);
         }
-        if(buff_rx[0] == 'M'){
+        else if(buff_rx[0] == 'M'){
             int size = atoi(&buff_rx[1]);
             bzero(buff_rx,1010); //clean buffer
             read(connfd,buff_rx,size);
-            printf("\n[ %s ] : %s" ,nickname,buff_rx);
+            printf("\n[ %s ] : %s \n" ,nickname,buff_rx);
         }
-        if(buff_rx[0] == 'Q'){
-            printf("\n %s  left the chat " ,nickname );
-            // receptions and transmissions will be disallowed.
-            shutdown(connfd , SHUT_RDWR);
-            close(connfd);
+        else if(buff_rx[0] == 'Q'){
+            cout<<"\n "<<nickname<<"left the chat\n";
             break;
         }
 
     }
+
+    // receptions and transmissions will be disallowed.
+    shutdown(connfd , SHUT_RDWR);
+    close(connfd);
     
 }
 
 
 void WRITE(int connfd){
 
-    for(;;)
-    {
+    do{
         string buff_tx;
 
-
-        cout << "\n[server] >";
+        //send message
         getline(cin,buff_tx);
 
         if(buff_tx == "Q"  ){
-            // receptions will be disallowed
-            shutdown(connfd, SHUT_RD);
-            close(connfd);
+            buff_tx += "000" ;
+//            cout << "\nProtocolo:" << buff_tx <<endl;
+            write(connfd,buff_tx.c_str(),4);
             break;
         }
 
         //write message
-        buff_tx = "M" + zeros(buff_tx.size()) + buff_tx ;
+        buff_tx = "M" + zeros(buff_tx.size())  + buff_tx ;
         int n = write(connfd, buff_tx.c_str(), buff_tx.size());
-        if(n < 0) perror("ERROR writing to client");
+//        cout << "\nProtocolo:" << buff_tx <<endl;
+        if(n < 0) perror("\nERROR writing to client");
 
-    }
+    }while(true);
+
+    // receptions will be disallowed
+    shutdown(connfd, SHUT_RDWR);
+    close(connfd);
 
 }
 
@@ -112,7 +120,7 @@ int main() /* input arguments are not used */
     char buff_rx[BUF_SIZE];                                   /* buffers for reception  */
 
     /* socket creation */
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    sockfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sockfd == -1)
     {
         fprintf(stderr, "[SERVER-error]: socket creation failed. %d: %s \n", errno, strerror(errno));
@@ -153,12 +161,11 @@ int main() /* input arguments are not used */
         printf("[SERVER]: Listening on SERV_PORT %d \n\n", ntohs(servaddr.sin_port));
     }
 
-    len = sizeof(client);
 
     /* Accept the data from incoming sockets in a iterative way */
     while (1)
     {
-        connfd = accept(sockfd, (struct sockaddr *)&client, &len);
+        connfd = accept(sockfd, NULL, NULL);
         if (connfd < 0)
         {
             fprintf(stderr, "[SERVER-error]: connection not accepted. %d: %s \n", errno, strerror(errno));
@@ -171,7 +178,9 @@ int main() /* input arguments are not used */
             th1.join();
             th2.join();
         }
-    }
 
+    }
     close(sockfd);
+
+    return 0;
 }
