@@ -50,7 +50,6 @@ void splitNickMsg(string txt ,string& nick , string& msg){
     nick = txt.substr(0,txt.find(delimiter));
     nick.erase(remove(nick.begin(),nick.end(),' '),nick.end());
     msg = txt.substr(txt.find(delimiter)+1,txt.size());
-
 }
 
 
@@ -118,6 +117,7 @@ void WRITE(int sockfd){
             string nick , msg;
             splitNickMsg(buff_tx,nick,msg);
             buff_tx = "D" + zeros(msg.size(),3) + msg + zeros(nick.size(),2) + nick ;
+            cout<<"\nenviaste: "<<buff_tx<<"\n";
         }else{
             //write message
             buff_tx = "M" + zeros(buff_tx.size(),3) + buff_tx;

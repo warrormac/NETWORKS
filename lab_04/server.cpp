@@ -64,7 +64,7 @@ void sendMsgByNick(string nick , string msg){
             string t = tamano;
             string buffer = a + t + msg ;
             n = write(it->first, buffer.c_str(), buffer.size());
-            cout << "Secret Protocolo:" << buffer << endl;
+            cout << "Direct Message Protocolo:" << buffer << endl;
         }
     }
 }
@@ -99,20 +99,26 @@ void READ(int connfd)
             broadcast(message);
         }
         else if(buff_rx[0] == 'D'){
+            cout<<"\n entro al D:...... \n";
             string nick , msg ;
             //read message
             int size = atoi(&buff_rx[1]);
-            read(connfd, &nick[0],size);
+            read(connfd, buff_rx,size);
+            msg = buff_rx;
+            cout<<"\n msg:......"<<msg<<"\n";
 
             //read nickname
             bzero(buff_rx,1010); //clean buffer
             read(connfd,buff_rx,2);
             size = atoi(&buff_rx[0]);
-            read(connfd,&msg[0],size);
+            read(connfd,buff_rx,size);
+            nick = buff_rx;
+            cout<<"\n mick:......"<<nick<<"\n";
 
             //sendMsg
-            msg = "\n[ " + nick + " ] <private>: " + msg + "\n" ;
-            sendMsgByNick(nick , msg);
+            message = "\n[ " + room[connfd] + " ] <private>: " + msg + "\n" ;
+            cout<<"\n message ... "<<message<<"\n";
+            sendMsgByNick(nick , message);
 
         }
         else if(buff_rx[0] == 'M'){
