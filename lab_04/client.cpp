@@ -62,7 +62,7 @@ void READ(int sockfd){
         bzero(buff_rx,1010); //clean buffer
         read(sockfd , buff_rx , 4); // read action and size
 
-        if(buff_rx[0] == 'M'){
+        if(buff_rx[0] == 'M' ){
             int size = atoi(&buff_rx[1]);
             bzero(buff_rx,1010); //clean buffer
             read(sockfd,buff_rx,size);
@@ -73,6 +73,13 @@ void READ(int sockfd){
             printf("\n server left the chat \n");
             break;
         }
+        if(buff_rx[0] == 'E'){
+            int size = atoi(&buff_rx[1]);
+            bzero(buff_rx,1010); //clean buffer
+            read(sockfd,buff_rx,size);
+            cout<<"\n "<<buff_rx<<" \n";
+        }
+
     }
 
     shutdown(sockfd, SHUT_RDWR);
@@ -117,7 +124,7 @@ void WRITE(int sockfd){
             string nick , msg;
             splitNickMsg(buff_tx,nick,msg);
             buff_tx = "D" + zeros(msg.size(),3) + msg + zeros(nick.size(),2) + nick ;
-            cout<<"\nenviaste: "<<buff_tx<<"\n";
+//            cout<<"\nenviaste: "<<buff_tx<<"\n";
         }else{
             //write message
             buff_tx = "M" + zeros(buff_tx.size(),3) + buff_tx;

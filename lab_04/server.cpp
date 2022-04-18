@@ -34,6 +34,11 @@ using namespace std;
 
 map<int , string> room;
 
+inline string zeros(int num){
+    string strNum = to_string(num);
+    return string(3 - strNum.size(),'0') + strNum;
+}
+
 void broadcast(string msg){
     int n;
     char tamano[100];
@@ -53,28 +58,37 @@ bool isDirectMsg(string msg){
     return 0;
 }
 
-void sendMsgByNick(string nick , string msg){
+
+
+bool findNickname(map<int,string>::iterator &it , string nick){
+    for ( it = room.begin(); it!=room.end(); ++it){
+        if(it->second == nick) return 1;
+    }
+    return 0;
+}
+
+
+void sendMsgByNick(int connfd , string nick , string msg){
     int n;
     char tamano[100];
-    for (auto it=room.begin(); it!=room.end(); ++it){
-        if(it->second == nick){
-            string a = "M";
-            sprintf(tamano,"%03d",msg.size());
-            tamano[4]='\0';
-            string t = tamano;
-            string buffer = a + t + msg ;
-            n = write(it->first, buffer.c_str(), buffer.size());
-            cout << "Direct Message Protocolo:" << buffer << endl;
-        }
+    map<int,string>::iterator it;
+
+    if(findNickname(it,nick)){
+        string a = "M";
+        sprintf(tamano,"%03d",msg.size());
+        tamano[4]='\0';
+        string t = tamano;
+        string buffer = a + t + msg ;
+        write(it->first, buffer.c_str(), buffer.size());
+        cout << "Direct Message Protocolo:" << buffer << endl;
+    }else{
+        string errormsg = "\ninvalid nickname try again\n";
+        string buffer = "E" + zeros(errormsg.size()) + errormsg ;
+        write(connfd,buffer.c_str(),buffer.size());
+        cout << "Error Protocolo: not found " << nick << endl;
     }
 }
 
-
-
-inline string zeros(int num){
-    string strNum = to_string(num);
-    return string(3 - strNum.size(),'0') + strNum;
-}
 
 void READ(int connfd)
 {
@@ -99,13 +113,11 @@ void READ(int connfd)
             broadcast(message);
         }
         else if(buff_rx[0] == 'D'){
-            cout<<"\n entro al D:...... \n";
             string nick , msg ;
             //read message
             int size = atoi(&buff_rx[1]);
             read(connfd, buff_rx,size);
             msg = buff_rx;
-            cout<<"\n msg:......"<<msg<<"\n";
 
             //read nickname
             bzero(buff_rx,1010); //clean buffer
@@ -113,12 +125,11 @@ void READ(int connfd)
             size = atoi(&buff_rx[0]);
             read(connfd,buff_rx,size);
             nick = buff_rx;
-            cout<<"\n mick:......"<<nick<<"\n";
 
             //sendMsg
             message = "\n[ " + room[connfd] + " ] <private>: " + msg + "\n" ;
             cout<<"\n message ... "<<message<<"\n";
-            sendMsgByNick(nick , message);
+            sendMsgByNick(connfd ,nick , message);
 
         }
         else if(buff_rx[0] == 'M'){
