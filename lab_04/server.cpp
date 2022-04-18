@@ -34,9 +34,9 @@ using namespace std;
 
 map<int , string> room;
 
-inline string zeros(int num){
+inline string zeros(int num, int digit=3){
     string strNum = to_string(num);
-    return string(3 - strNum.size(),'0') + strNum;
+    return string(digit - strNum.size(),'0') + strNum;
 }
 
 void broadcast(string msg){
@@ -89,6 +89,22 @@ void sendMsgByNick(int connfd , string nick , string msg){
     }
 }
 
+void sendUserList(int connfd){
+    string buffer , action , ClientsSize , nick , nickSize;
+
+    action = "l";
+    ClientsSize = zeros(room.size());
+
+    buffer = action + ClientsSize ;
+
+    for (auto it=room.begin(); it!=room.end(); ++it){
+        nick = it->second;
+        nickSize = zeros(nick.size(),2);
+        buffer += nickSize + nick ;
+    }
+    int n = write(connfd, buffer.c_str(), buffer.size());
+    cout << "Protocolo:" << buffer << endl;
+}
 
 void READ(int connfd)
 {
@@ -146,6 +162,8 @@ void READ(int connfd)
             write(connfd,"Q000",4);
             broadcast(message);
             break;
+        }else if(buff_rx[0] == 'L'){
+            sendUserList(connfd);
         }
 
     }

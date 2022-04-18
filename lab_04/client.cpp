@@ -53,6 +53,7 @@ void splitNickMsg(string txt ,string& nick , string& msg){
 }
 
 
+
 void READ(int sockfd){
 
     char buff_rx[1010];
@@ -79,6 +80,24 @@ void READ(int sockfd){
             read(sockfd,buff_rx,size);
             cout<<"\n "<<buff_rx<<" \n";
         }
+        if(buff_rx[0] == 'l'){
+            string nick ;
+            int nickSize ;
+            int size = atoi(&buff_rx[1]);
+            cout<<"\n User List: \n";
+            while(size--) {
+                //read nickname size
+                bzero(buff_rx,1010); //clean buffer
+                read(sockfd,buff_rx,2);
+                int nickSize = atoi(&buff_rx[0]);
+
+                //read nickname
+                bzero(buff_rx,1010); //clean buffer
+                read(sockfd,buff_rx,nickSize);
+                nick = buff_rx;
+                cout<<"\t-> "<<nick<<" \n";
+            }
+        }
 
     }
 
@@ -101,7 +120,6 @@ void WRITE(int sockfd){
 
     buff_tx = "N" + zeros(nickname.size(),3) + nickname;
     int n = write(sockfd, buff_tx.c_str(), buff_tx.size());
-//    cout << "\nProtocolo:" << buff_tx<<endl ;
     if (n < 0) perror("ERROR writing to server");
 
 
@@ -114,7 +132,6 @@ void WRITE(int sockfd){
         //Quit Action
         if(buff_tx == "Q"){
             buff_tx += "000" ;
-//            cout << "\nProtocolo:" << buff_tx<<endl ;
             write(sockfd,buff_tx.c_str(),4);
             break;
         }
@@ -125,14 +142,18 @@ void WRITE(int sockfd){
             splitNickMsg(buff_tx,nick,msg);
             buff_tx = "D" + zeros(msg.size(),3) + msg + zeros(nick.size(),2) + nick ;
 //            cout<<"\nenviaste: "<<buff_tx<<"\n";
-        }else{
+        }else if( buff_tx == "L"){
+            //list clients request
+            buff_tx = "L000";
+        }
+        else{
             //write message
             buff_tx = "M" + zeros(buff_tx.size(),3) + buff_tx;
         }
 
         int n = write(sockfd, buff_tx.c_str(), buff_tx.size());
         if(n < 0) perror("ERROR writing to server");
-//        cout << "\nProtocolo:" << buff_tx ;
+
 
     }while(true);
 
