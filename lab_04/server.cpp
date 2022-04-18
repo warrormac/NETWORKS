@@ -47,7 +47,7 @@ void broadcast(string msg){
         cout << "Protocolo:" << buffer << endl;
     }
 }
-bool isSecretMsg(string msg){
+bool isDirectMsg(string msg){
     std::size_t found = msg.find(',');
     if (found!=std::string::npos) return 1;
     return 0;
@@ -67,17 +67,6 @@ void sendMsgByNick(string nick , string msg){
             cout << "Secret Protocolo:" << buffer << endl;
         }
     }
-}
-
-
-string decodeMsg(string txt){
-    string delimiter = ",";
-    string nick = txt.substr(0,txt.find(delimiter));
-    nick.erase(remove(nick.begin(),nick.end(),' '),nick.end());
-    string msg = txt.substr(txt.find(delimiter)+1,txt.size());
-    msg = "\n[ " + nick + " ] <private>: " + msg + "\n" ;
-    sendMsgByNick(nick , msg);
-    return msg;
 }
 
 
@@ -109,19 +98,30 @@ void READ(int connfd)
             cout<<message;
             broadcast(message);
         }
-        else if(buff_rx[0] == 'M'){
+        else if(buff_rx[0] == 'D'){
+            string nick , msg ;
+            //read message
+            int size = atoi(&buff_rx[1]);
+            read(connfd, &nick[0],size);
 
+            //read nickname
+            bzero(buff_rx,1010); //clean buffer
+            read(connfd,buff_rx,2);
+            size = atoi(&buff_rx[0]);
+            read(connfd,&msg[0],size);
+
+            //sendMsg
+            msg = "\n[ " + nick + " ] <private>: " + msg + "\n" ;
+            sendMsgByNick(nick , msg);
+
+        }
+        else if(buff_rx[0] == 'M'){
             int size = atoi(&buff_rx[1]);
             bzero(buff_rx,1010); //clean buffer
             read(connfd,buff_rx,size);
-            if(isSecretMsg(buff_rx)){
-                message = decodeMsg(buff_rx);
-            }else{
-                message = "\n[" + room[connfd] + " ] : " + buff_rx + "\n" ;
-                broadcast(message);
-            }
+            message = "\n[" + room[connfd] + " ] : " + buff_rx + "\n" ;
+            broadcast(message);
             cout<<message;
-
         }
         else if(buff_rx[0] == 'Q'){
             message = "\n" + room[connfd] + "left the chat\n";
