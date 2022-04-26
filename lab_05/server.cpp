@@ -96,6 +96,53 @@ void sendMsgByNick(int connfd , string nick , string msg){
     }
 }
 
+void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
+
+
+    map<int,string>::iterator it;
+
+    if(findNickname(it,nick)){
+
+        string fileSize = std::to_string(file_size);
+        string nickName = room[connfd];
+
+        //send initial protocol details
+        string protocol = "F" + zeros(fileName.size(),3) + fileName + zeros(nickName.size(),2) + nickName;
+        protocol += zeros(fileSize.size(),9) ;
+        write(it->first, protocol.c_str(), protocol.size());
+
+
+        //send bytes
+        char *buffer;
+        int SIZE = 1024;
+
+        while ( file_size) {
+
+            if (file_size < SIZE) {
+                SIZE = file_size;
+            }
+
+            buffer = new char[SIZE];
+
+            if (read(connfd,buffer,SIZE) > 0) {
+                write(it->first, buffer, SIZE);
+            }
+
+            file_size -= SIZE;
+        }
+
+        cout << "Direct File  Protocolo to " << nick << endl;
+    }else{
+        string errormsg = "\ninvalid nickname try again\n";
+        string buffer = "E" + zeros(errormsg.size()) + errormsg ;
+        write(connfd,buffer.c_str(),buffer.size());
+        cout << "Error Protocolo: not found " << nick << endl;
+    }
+
+}
+
+
+
 void sendUserList(int connfd){
     string buffer , action , ClientsSize , nick , nickSize;
 
@@ -125,6 +172,28 @@ void READ(int connfd)
     {
         bzero(buff_rx,1010); //clean buffer
         read(connfd , buff_rx , 4); // read action and size
+
+        if(buff_rx[0] == 'F'){
+            string nick , fileName ;
+            //read fileName
+            int size = atoi(&buff_rx[1]);
+            read(connfd, buff_rx,size);
+            fileName = buff_rx;
+
+            //read nickname
+            bzero(buff_rx,1010); //clean buffer
+            read(connfd,buff_rx,2);
+            size = atoi(&buff_rx[0]);
+            read(connfd,buff_rx,size);
+            nick = buff_rx;
+
+            //readFile
+            bzero(buff_rx,1010); //clean buffer
+            read(connfd,buff_rx,9);
+            size = atoi(&buff_rx[0]);
+
+            sendFileByNick(connfd,nick,fileName,size);
+        }
 
         if(buff_rx[0] == 'N'){
             int size = atoi(&buff_rx[1]);
