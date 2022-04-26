@@ -35,9 +35,12 @@
 #include <thread>
 #include<map>
 #include <bits/stdc++.h>
+#include <mutex>
+
 
 using namespace std;
 
+mutex m;
 
 map<int , string> room;
 
@@ -101,6 +104,7 @@ void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
 
     map<int,string>::iterator it;
 
+
     if(findNickname(it,nick)){
 
         string fileSize = std::to_string(file_size);
@@ -111,7 +115,6 @@ void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
         protocol += zeros(fileSize.size(),9) ;
         write(it->first, protocol.c_str(), protocol.size());
 
-
         //send bytes
         char *buffer;
         int SIZE = 1024;
@@ -121,9 +124,7 @@ void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
             if (file_size < SIZE) {
                 SIZE = file_size;
             }
-
             buffer = new char[SIZE];
-
             if (read(connfd,buffer,SIZE) > 0) {
                 write(it->first, buffer, SIZE);
             }
@@ -132,6 +133,7 @@ void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
         }
 
         cout << "Direct File  Protocolo to " << nick << endl;
+
     }else{
         string errormsg = "\ninvalid nickname try again\n";
         string buffer = "E" + zeros(errormsg.size()) + errormsg ;
@@ -174,6 +176,7 @@ void READ(int connfd)
         read(connfd , buff_rx , 4); // read action and size
 
         if(buff_rx[0] == 'F'){
+            cout<<"\nEntro a server F\n";
             string nick , fileName ;
             //read fileName
             int size = atoi(&buff_rx[1]);
@@ -190,12 +193,13 @@ void READ(int connfd)
             //readFile
             bzero(buff_rx,1010); //clean buffer
             read(connfd,buff_rx,9);
-            size = atoi(&buff_rx[0]);
+            int file_size = atoi(&buff_rx[0]);
 
-            sendFileByNick(connfd,nick,fileName,size);
+
+            sendFileByNick(connfd,nick,fileName,file_size);
+
         }
-
-        if(buff_rx[0] == 'N'){
+        else if(buff_rx[0] == 'N'){
             int size = atoi(&buff_rx[1]);
             bzero(nickname,1000); //clean buffer
             read(connfd,nickname,size);

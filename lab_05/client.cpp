@@ -24,11 +24,11 @@ using namespace std;
 /*Multi threading*/
 #include <thread>
 
-#define SERVER_ADDRESS "127.0.0.1" /* server IP */
-#define PORT 8080
+//#define SERVER_ADDRESS "127.0.0.1" /* server IP */
+//#define PORT 8080
 
-//#define PORT 45011            /* port */
-//#define SERVER_ADDRESS "5.253.235.219" /* IP, only IPV4 support  */
+#define PORT 45011            /* port */
+#define SERVER_ADDRESS "5.253.235.219" /* IP, only IPV4 support  */
 
 
 
@@ -85,8 +85,8 @@ void READ(int sockfd){
             cout<<"\n "<<buff_rx<<" \n";
 //            printf("\n[ SERVER ] : %s\n" ,buff_rx);
         }
-        if(buff_rx[1] == 'F'){
-
+        else if(buff_rx[0] == 'F'){
+            cout<<"\nEntro para leer los bytes\n";
             //read file Name
             string fileName;
             int size = atoi(&buff_rx[1]);
@@ -104,19 +104,19 @@ void READ(int sockfd){
             nick = buff_rx;
 
 
-            //readfile
+            //readfile Size
             bzero(buff_rx,1000); //clean buffer
             read(sockfd,buff_rx,9);
-            int file_size = atoi(&buff_rx[1]);
-            string fileSize = std::to_string(size);
+            int file_size = atoi(&buff_rx[0]);
 
 
             //read bytes
             char *buffer;
             int SIZE = 1024;
+            fileName = "My" + fileName;
 
             ofstream file;
-            file.open("My"+ fileName, ios::binary);
+            file.open(fileName , ios::binary);
 
             while ( file_size) {
 
@@ -132,21 +132,21 @@ void READ(int sockfd){
 
                 file_size -= SIZE;
             }
+
             string msg = "\n[ " + nick + " ] <private>:  send you the file : (" + fileName +")\n" ;
-            cout<<"\n "<<buff_rx<<" \n";
 
         }
-        if(buff_rx[0] == 'Q'){
+        else if(buff_rx[0] == 'Q'){
             printf("\n server left the chat \n");
             break;
         }
-        if(buff_rx[0] == 'E'){
+        else if(buff_rx[0] == 'E'){
             int size = atoi(&buff_rx[1]);
             bzero(buff_rx,1010); //clean buffer
             read(sockfd,buff_rx,size);
             cout<<"\n "<<buff_rx<<" \n";
         }
-        if(buff_rx[0] == 'l'){
+        else if(buff_rx[0] == 'l'){
             string nick ;
             int nickSize ;
             int size = atoi(&buff_rx[1]);
@@ -182,7 +182,7 @@ void WRITE(int sockfd){
 
     cout<<"\nEnter your nickname > ";
     getline(cin,nickname);
-
+    cin.ignore();
 
     buff_tx = "N" + zeros(nickname.size(),3) + nickname;
     int n = write(sockfd, buff_tx.c_str(), buff_tx.size());
@@ -204,6 +204,7 @@ void WRITE(int sockfd){
 
 
         if(isSendFile(buff_tx)) {
+
             string nick, fileName;
             splitNickFile(buff_tx, nick, fileName);
 
@@ -235,13 +236,13 @@ void WRITE(int sockfd){
                 }
 
                 buffer = new char[SIZE];
-
                 if (file.read( buffer, SIZE)) {
                     write(sockfd, buffer, SIZE);
                 }
 
                 file_size -= SIZE;
             }
+            cout<<"\nEntro a sendFile\n";
 
         }
         else{
@@ -251,7 +252,7 @@ void WRITE(int sockfd){
                 string nick , msg;
                 splitNickMsg(buff_tx,nick,msg);
                 buff_tx = "D" + zeros(msg.size(),3) + msg + zeros(nick.size(),2) + nick ;
-//            cout<<"\nenviaste: "<<buff_tx<<"\n";
+            cout<<"\nenviaste: "<<buff_tx<<"\n";
             }else if( buff_tx == "L"){
                 //list clients request
                 buff_tx = "L000";
