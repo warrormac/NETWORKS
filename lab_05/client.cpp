@@ -19,7 +19,7 @@ using namespace std;
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-
+#include <fstream>
 
 /*Multi threading*/
 #include <thread>
@@ -54,6 +54,21 @@ void splitNickMsg(string txt ,string& nick , string& msg){
 
 
 
+void splitNickFile(string buff,string& nick,string& fileName){
+
+    buff.erase(remove(buff.begin(),buff.end(),' '),buff.end());
+    nick = buff.substr(buff.find("(")+1,buff.find(",") - buff.find("(") -1);
+    fileName = buff.substr(buff.find(',')+1,buff.find(')') - buff.find(',')-1);
+
+}
+
+
+bool isSendFile(string buff){
+    buff.erase(remove(buff.begin(),buff.end(),' '),buff.end());
+    return buff.size()> 6 && buff[0] == 'F' && buff[1] == '(' && buff.find(',') !=std::string::npos && buff[buff.size()-1] == ')';
+}
+
+
 void READ(int sockfd){
 
     char buff_rx[1010];
@@ -69,6 +84,57 @@ void READ(int sockfd){
             read(sockfd,buff_rx,size);
             cout<<"\n "<<buff_rx<<" \n";
 //            printf("\n[ SERVER ] : %s\n" ,buff_rx);
+        }
+        if(buff_rx[1] == 'F'){
+
+            //read file Name
+            string fileName;
+            int size = atoi(&buff_rx[1]);
+            bzero(buff_rx,1000); //clean buffer
+            read(sockfd,buff_rx,size);
+            fileName = buff_rx;
+
+            //readNick
+            string nick;
+            bzero(buff_rx,1010); //clean buffer
+            read(sockfd,buff_rx,2);
+            size = atoi(&buff_rx[0]);
+            bzero(buff_rx,1010); //clean buffer
+            read(sockfd,buff_rx,size);
+            nick = buff_rx;
+
+
+            //readfile
+            bzero(buff_rx,1000); //clean buffer
+            read(sockfd,buff_rx,9);
+            int file_size = atoi(&buff_rx[1]);
+            string fileSize = std::to_string(size);
+
+
+            //read bytes
+            char *buffer;
+            int SIZE = 1024;
+
+            ofstream file;
+            file.open("My"+ fileName, ios::binary);
+
+            while ( file_size) {
+
+                if (file_size < SIZE) {
+                    SIZE = file_size;
+                }
+
+                buffer = new char[SIZE];
+
+                if (read(sockfd, buffer, SIZE) > 0) {
+                    file.write(buffer,SIZE);
+                }
+
+                file_size -= SIZE;
+            }
+            string msg = "\n[ " + nick + " ] <private>:  send you the file : (" + fileName +")\n" ;
+            cout<<"\n "<<buff_rx<<" \n";
+
         }
         if(buff_rx[0] == 'Q'){
             printf("\n server left the chat \n");
@@ -136,24 +202,67 @@ void WRITE(int sockfd){
             break;
         }
 
-        //Direct Message
-        if(isDirectMsg(buff_tx)){
-            string nick , msg;
-            splitNickMsg(buff_tx,nick,msg);
-            buff_tx = "D" + zeros(msg.size(),3) + msg + zeros(nick.size(),2) + nick ;
-//            cout<<"\nenviaste: "<<buff_tx<<"\n";
-        }else if( buff_tx == "L"){
-            //list clients request
-            buff_tx = "L000";
+
+        if(isSendFile(buff_tx)) {
+            string nick, fileName;
+            splitNickFile(buff_tx, nick, fileName);
+
+            //write
+            ifstream file;
+            file.open(fileName, ios::binary);
+
+            //get size
+            file.seekg(0, ios::end);
+            int file_size = file.tellg();
+            string fileSize = std::to_string(file_size);
+
+            //send initial protocol details
+            string protocol = "F" + zeros(fileName.size(),3) + fileName + zeros(nick.size(),2) + nick;
+            protocol += zeros(fileSize.size(),9) ;
+            write(sockfd, protocol.c_str(), protocol.size());
+
+            //read bytes
+            file.seekg(0, ios::beg);
+            int bytes_read;
+            char *buffer;
+            int SIZE = 1024;
+            int connfd;
+
+            while (!file.eof() && file_size) {
+
+                if (file_size < SIZE) {
+                    SIZE = file_size;
+                }
+
+                buffer = new char[SIZE];
+
+                if (file.read( buffer, SIZE)) {
+                    write(sockfd, buffer, SIZE);
+                }
+
+                file_size -= SIZE;
+            }
+
         }
         else{
-            //write message
-            buff_tx = "M" + zeros(buff_tx.size(),3) + buff_tx;
+
+            if(isDirectMsg(buff_tx)){
+                //Direct Message
+                string nick , msg;
+                splitNickMsg(buff_tx,nick,msg);
+                buff_tx = "D" + zeros(msg.size(),3) + msg + zeros(nick.size(),2) + nick ;
+//            cout<<"\nenviaste: "<<buff_tx<<"\n";
+            }else if( buff_tx == "L"){
+                //list clients request
+                buff_tx = "L000";
+            }
+            else{
+                //write message
+                buff_tx = "M" + zeros(buff_tx.size(),3) + buff_tx;
+            }
+            int n = write(sockfd, buff_tx.c_str(), buff_tx.size());
+            if(n < 0) perror("ERROR writing to server");
         }
-
-        int n = write(sockfd, buff_tx.c_str(), buff_tx.size());
-        if(n < 0) perror("ERROR writing to server");
-
 
     }while(true);
 
