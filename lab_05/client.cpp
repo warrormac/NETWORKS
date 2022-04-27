@@ -25,7 +25,7 @@ using namespace std;
 #include <thread>
 
 #define SERVER_ADDRESS "127.0.0.1" /* server IP */
-#define PORT 8080
+#define PORT 8000
 
 //#define PORT 45011            /* port */
 //#define SERVER_ADDRESS "5.253.235.219" /* IP, only IPV4 support  */
@@ -182,7 +182,7 @@ void WRITE(int sockfd){
 
     cout<<"\nEnter your nickname > ";
     getline(cin,nickname);
-    cin.ignore();
+//    cin.ignore();
 
     buff_tx = "N" + zeros(nickname.size(),3) + nickname;
     int n = write(sockfd, buff_tx.c_str(), buff_tx.size());
@@ -204,7 +204,7 @@ void WRITE(int sockfd){
 
 
         if(isSendFile(buff_tx)) {
-
+            cout<<"\nEntro de enviar\n";
             string nick, fileName;
             splitNickFile(buff_tx, nick, fileName);
 
@@ -217,10 +217,14 @@ void WRITE(int sockfd){
             int file_size = file.tellg();
             string fileSize = std::to_string(file_size);
 
+
+
             //send initial protocol details
-            string protocol = "F" + zeros(fileName.size(),3) + fileName + zeros(nick.size(),2) + nick;
-            protocol += zeros(fileSize.size(),9) ;
+            string protocol = "F" + zeros(fileName.size(),3) + fileName + zeros(nick.size(),2) + nick + zeros(file_size,9) ;
             write(sockfd, protocol.c_str(), protocol.size());
+
+            cout<<"\n client size: "<<file_size<<"\n";
+            cout<<"\n client sizestring: "<< zeros(fileSize.size(),9)<<"\n";
 
             //read bytes
             file.seekg(0, ios::beg);
@@ -237,12 +241,13 @@ void WRITE(int sockfd){
 
                 buffer = new char[SIZE];
                 if (file.read( buffer, SIZE)) {
+                    cout<<"\nclient: "<<buffer;
                     write(sockfd, buffer, SIZE);
                 }
 
                 file_size -= SIZE;
             }
-            cout<<"\nEntro a sendFile\n";
+            cout<<"\nTermino de enviar\n";
 
         }
         else{

@@ -24,7 +24,7 @@
 #include <string.h>
 
 /* server parameters */
-#define SERV_PORT 8080             /* port */
+#define SERV_PORT 8000             /* port */
 #define SERV_HOST_ADDR "127.0.0.1" /* IP, only IPV4 support  */
 //#define SERV_PORT 45011            /* port */
 //#define SERV_HOST_ADDR "5.253.235.219" /* IP, only IPV4 support  */
@@ -111,22 +111,31 @@ void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
         string nickName = room[connfd];
 
         //send initial protocol details
-        string protocol = "F" + zeros(fileName.size(),3) + fileName + zeros(nickName.size(),2) + nickName;
-        protocol += zeros(fileSize.size(),9) ;
+        string protocol = "F" + zeros(fileName.size(),3) + fileName + zeros(nick.size(),2) + nick + zeros(file_size,9) ;
         write(it->first, protocol.c_str(), protocol.size());
+
 
         //send bytes
         char *buffer;
         int SIZE = 1024;
+
+//        ofstream file;
+//        file.open("server_" + fileName , ios::binary);
+
+        cout<<"\nserver: size"<<file_size<<"\n";
 
         while ( file_size) {
 
             if (file_size < SIZE) {
                 SIZE = file_size;
             }
+
             buffer = new char[SIZE];
+
             if (read(connfd,buffer,SIZE) > 0) {
-                write(it->first, buffer, SIZE);
+                cout<<"\nserver: "<<buffer;
+//                write(it->first, buffer, SIZE);
+                file.write(buffer,SIZE);
             }
 
             file_size -= SIZE;
@@ -135,10 +144,10 @@ void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
         cout << "Direct File  Protocolo to " << nick << endl;
 
     }else{
-        string errormsg = "\ninvalid nickname try again\n";
-        string buffer = "E" + zeros(errormsg.size()) + errormsg ;
-        write(connfd,buffer.c_str(),buffer.size());
-        cout << "Error Protocolo: not found " << nick << endl;
+//        string errormsg = "\ninvalid nickname try again\n";
+//        string buffer = "E" + zeros(errormsg.size()) + errormsg ;
+//        write(connfd,buffer.c_str(),buffer.size());
+//        cout << "Error Protocolo: not found " << nick << endl;
     }
 
 }
@@ -183,6 +192,8 @@ void READ(int connfd)
             read(connfd, buff_rx,size);
             fileName = buff_rx;
 
+            cout<<"\nFileName: "<<fileName<<endl;
+
             //read nickname
             bzero(buff_rx,1010); //clean buffer
             read(connfd,buff_rx,2);
@@ -190,11 +201,15 @@ void READ(int connfd)
             read(connfd,buff_rx,size);
             nick = buff_rx;
 
+            cout<<"\nNickName: "<<nick<<endl;
+
+
             //readFile
             bzero(buff_rx,1010); //clean buffer
             read(connfd,buff_rx,9);
             int file_size = atoi(&buff_rx[0]);
 
+            cout<<"\nFileSize: "<<file_size<<endl;
 
             sendFileByNick(connfd,nick,fileName,file_size);
 
@@ -350,7 +365,7 @@ int main() /* input arguments are not used */
         else
         {
             thread (READ, connfd).detach();
-            thread (WRITE, connfd).detach();
+//            thread (WRITE, connfd).detach();
 
         }
 
