@@ -86,7 +86,6 @@ void READ(int sockfd){
 //            printf("\n[ SERVER ] : %s\n" ,buff_rx);
         }
         else if(buff_rx[0] == 'F'){
-            cout<<"\nEntro para leer los bytes\n";
             //read file Name
             string fileName;
             int size = atoi(&buff_rx[1]);
@@ -109,11 +108,10 @@ void READ(int sockfd){
             read(sockfd,buff_rx,9);
             int file_size = atoi(&buff_rx[0]);
 
-
             //read bytes
             char *buffer;
             int SIZE = 1024;
-            fileName = "My" + fileName;
+            fileName = "New" + fileName;
 
             ofstream file;
             file.open(fileName , ios::binary);
@@ -129,11 +127,10 @@ void READ(int sockfd){
                 if (read(sockfd, buffer, SIZE) > 0) {
                     file.write(buffer,SIZE);
                 }
-
                 file_size -= SIZE;
             }
-
             string msg = "\n[ " + nick + " ] <private>:  send you the file : (" + fileName +")\n" ;
+            cout<<msg;
 
         }
         else if(buff_rx[0] == 'Q'){
@@ -204,7 +201,7 @@ void WRITE(int sockfd){
 
 
         if(isSendFile(buff_tx)) {
-            cout<<"\nEntro de enviar\n";
+
             string nick, fileName;
             splitNickFile(buff_tx, nick, fileName);
 
@@ -216,7 +213,6 @@ void WRITE(int sockfd){
             file.seekg(0, ios::end);
             int file_size = file.tellg();
             string fileSize = std::to_string(file_size);
-
 
 
             //send initial protocol details
@@ -247,7 +243,7 @@ void WRITE(int sockfd){
 
                 file_size -= SIZE;
             }
-            cout<<"\nTermino de enviar\n";
+
 
         }
         else{

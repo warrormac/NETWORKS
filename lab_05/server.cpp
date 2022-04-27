@@ -104,7 +104,6 @@ void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
 
     map<int,string>::iterator it;
 
-
     if(findNickname(it,nick)){
 
         string fileSize = std::to_string(file_size);
@@ -119,11 +118,6 @@ void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
         char *buffer;
         int SIZE = 1024;
 
-//        ofstream file;
-//        file.open("server_" + fileName , ios::binary);
-
-        cout<<"\nserver: size"<<file_size<<"\n";
-
         while ( file_size) {
 
             if (file_size < SIZE) {
@@ -134,8 +128,7 @@ void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
 
             if (read(connfd,buffer,SIZE) > 0) {
                 cout<<"\nserver: "<<buffer;
-//                write(it->first, buffer, SIZE);
-                file.write(buffer,SIZE);
+                write(it->first, buffer, SIZE);
             }
 
             file_size -= SIZE;
@@ -144,10 +137,10 @@ void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
         cout << "Direct File  Protocolo to " << nick << endl;
 
     }else{
-//        string errormsg = "\ninvalid nickname try again\n";
-//        string buffer = "E" + zeros(errormsg.size()) + errormsg ;
-//        write(connfd,buffer.c_str(),buffer.size());
-//        cout << "Error Protocolo: not found " << nick << endl;
+        string errormsg = "\ninvalid nickname try again\n";
+        string buffer = "E" + zeros(errormsg.size()) + errormsg ;
+        write(connfd,buffer.c_str(),buffer.size());
+        cout << "Error Protocolo: not found " << nick << endl;
     }
 
 }
