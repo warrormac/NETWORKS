@@ -27,7 +27,7 @@ using namespace std;
 #define SERVER_ADDRESS "127.0.0.1" /* server IP */
 #define PORT 8000
 
-//#define PORT 45011            /* port */
+//#define PORT 45111            /* port */
 //#define SERVER_ADDRESS "5.253.235.219" /* IP, only IPV4 support  */
 
 
@@ -108,13 +108,16 @@ void READ(int sockfd){
             read(sockfd,buff_rx,9);
             int file_size = atoi(&buff_rx[0]);
 
+
+            cout<<"\nMyFilesize : "<<file_size<<endl;
+
             //read bytes
             char *buffer;
             int SIZE = 1024;
-            fileName = "New" + fileName;
+            fileName = "MM" + fileName;
 
             ofstream file;
-            file.open(fileName , ios::binary);
+            file.open(fileName , ios::out);
 
             while ( file_size) {
 
@@ -131,6 +134,8 @@ void READ(int sockfd){
             }
             string msg = "\n[ " + nick + " ] <private>:  send you the file : (" + fileName +")\n" ;
             cout<<msg;
+
+            file.close();
 
         }
         else if(buff_rx[0] == 'Q'){
@@ -207,7 +212,7 @@ void WRITE(int sockfd){
 
             //write
             ifstream file;
-            file.open(fileName, ios::binary);
+            file.open(fileName, ios::out);
 
             //get size
             file.seekg(0, ios::end);
@@ -219,8 +224,8 @@ void WRITE(int sockfd){
             string protocol = "F" + zeros(fileName.size(),3) + fileName + zeros(nick.size(),2) + nick + zeros(file_size,9) ;
             write(sockfd, protocol.c_str(), protocol.size());
 
-            cout<<"\n client size: "<<file_size<<"\n";
-            cout<<"\n client sizestring: "<< zeros(fileSize.size(),9)<<"\n";
+//            cout<<"\n client size: "<<file_size<<"\n";
+//            cout<<"\n client sizestring: "<< zeros(fileSize.size(),9)<<"\n";
 
             //read bytes
             file.seekg(0, ios::beg);
@@ -237,13 +242,13 @@ void WRITE(int sockfd){
 
                 buffer = new char[SIZE];
                 if (file.read( buffer, SIZE)) {
-                    cout<<"\nclient: "<<buffer;
                     write(sockfd, buffer, SIZE);
                 }
 
                 file_size -= SIZE;
             }
 
+            file.close();
 
         }
         else{

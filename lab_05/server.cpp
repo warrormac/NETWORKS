@@ -1,7 +1,4 @@
-//
-// Created by misash on 26/04/22.
-//
-//
+
 // Created by misash on 26/04/22.
 //
 
@@ -24,10 +21,13 @@
 #include <string.h>
 
 /* server parameters */
+
 #define SERV_PORT 8000             /* port */
 #define SERV_HOST_ADDR "127.0.0.1" /* IP, only IPV4 support  */
+
 //#define SERV_PORT 45011            /* port */
 //#define SERV_HOST_ADDR "5.253.235.219" /* IP, only IPV4 support  */
+
 #define BUF_SIZE 100               /* Buffer rx, tx max size  */
 #define BACKLOG 10                  /* Max. client pending connections  */
 
@@ -110,9 +110,8 @@ void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
         string nickName = room[connfd];
 
         //send initial protocol details
-        string protocol = "F" + zeros(fileName.size(),3) + fileName + zeros(nick.size(),2) + nick + zeros(file_size,9) ;
+        string protocol = "F" + zeros(fileName.size(),3) + fileName + zeros(nickName.size(),2) + nickName + zeros(file_size,9) ;
         write(it->first, protocol.c_str(), protocol.size());
-
 
         //send bytes
         char *buffer;
@@ -123,17 +122,14 @@ void sendFileByNick(int connfd  ,string nick, string fileName, int file_size){
             if (file_size < SIZE) {
                 SIZE = file_size;
             }
-
             buffer = new char[SIZE];
 
             if (read(connfd,buffer,SIZE) > 0) {
-                cout<<"\nserver: "<<buffer;
                 write(it->first, buffer, SIZE);
             }
 
             file_size -= SIZE;
         }
-
         cout << "Direct File  Protocolo to " << nick << endl;
 
     }else{
@@ -178,7 +174,7 @@ void READ(int connfd)
         read(connfd , buff_rx , 4); // read action and size
 
         if(buff_rx[0] == 'F'){
-            cout<<"\nEntro a server F\n";
+
             string nick , fileName ;
             //read fileName
             int size = atoi(&buff_rx[1]);
@@ -193,9 +189,6 @@ void READ(int connfd)
             size = atoi(&buff_rx[0]);
             read(connfd,buff_rx,size);
             nick = buff_rx;
-
-            cout<<"\nNickName: "<<nick<<endl;
-
 
             //readFile
             bzero(buff_rx,1010); //clean buffer
