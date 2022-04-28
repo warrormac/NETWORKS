@@ -24,13 +24,13 @@ using namespace std;
 /*Multi threading*/
 #include <thread>
 
-#define SERVER_ADDRESS "127.0.0.1" /* server IP */
+//#define SERVER_ADDRESS "127.0.0.1" /* server IP */
+#define SERVER_ADDRESS "44.200.149.157" /* server IP */
 //#define PORT 8000
 
-//#define PORT 45111            /* port */
+/* port */
 //#define SERVER_ADDRESS "5.253.235.219" /* IP, only IPV4 support  */
-
-
+/* port */
 
 
 inline string zeros(int num, int digits){
@@ -108,16 +108,13 @@ void READ(int sockfd){
             read(sockfd,buff_rx,9);
             int file_size = atoi(&buff_rx[0]);
 
-
-            cout<<"\nMyFilesize : "<<file_size<<endl;
-
             //read bytes
             char *buffer;
             int SIZE = 1024;
-            fileName = "MM" + fileName;
+            fileName = "./recibidos/" + fileName;
 
             ofstream file;
-            file.open(fileName , ios::out);
+            file.open(fileName , ios::binary);
 
             while ( file_size) {
 
@@ -134,8 +131,6 @@ void READ(int sockfd){
             }
             string msg = "\n[ " + nick + " ] <private>:  send you the file : (" + fileName +")\n" ;
             cout<<msg;
-
-            file.close();
 
         }
         else if(buff_rx[0] == 'Q'){
@@ -212,7 +207,7 @@ void WRITE(int sockfd){
 
             //write
             ifstream file;
-            file.open(fileName, ios::out);
+            file.open(fileName, ios::binary);
 
             //get size
             file.seekg(0, ios::end);
@@ -224,8 +219,8 @@ void WRITE(int sockfd){
             string protocol = "F" + zeros(fileName.size(),3) + fileName + zeros(nick.size(),2) + nick + zeros(file_size,9) ;
             write(sockfd, protocol.c_str(), protocol.size());
 
-//            cout<<"\n client size: "<<file_size<<"\n";
-//            cout<<"\n client sizestring: "<< zeros(fileSize.size(),9)<<"\n";
+            cout<<"\n client size: "<<file_size<<"\n";
+            cout<<"\n client sizestring: "<< zeros(fileSize.size(),9)<<"\n";
 
             //read bytes
             file.seekg(0, ios::beg);
@@ -242,13 +237,13 @@ void WRITE(int sockfd){
 
                 buffer = new char[SIZE];
                 if (file.read( buffer, SIZE)) {
+                    cout<<"\nclient: "<<buffer;
                     write(sockfd, buffer, SIZE);
                 }
 
                 file_size -= SIZE;
             }
 
-            file.close();
 
         }
         else{
@@ -258,7 +253,7 @@ void WRITE(int sockfd){
                 string nick , msg;
                 splitNickMsg(buff_tx,nick,msg);
                 buff_tx = "D" + zeros(msg.size(),3) + msg + zeros(nick.size(),2) + nick ;
-            cout<<"\nenviaste: "<<buff_tx<<"\n";
+                cout<<"\nenviaste: "<<buff_tx<<"\n";
             }else if( buff_tx == "L"){
                 //list clients request
                 buff_tx = "L000";
@@ -280,6 +275,12 @@ void WRITE(int sockfd){
 }
 
 
+
+
+
+
+
+/* This clients connects, sends a text and disconnects */
 int main()
 {
     int sockfd;
@@ -287,7 +288,9 @@ int main()
     struct sockaddr_in servaddr;
     cout<<"ingrese Puerto: ";
     cin>>PORT;
-//    / Socket creation /
+    cin.ignore();
+
+    /* Socket creation */
     sockfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sockfd == -1)
     {
@@ -302,12 +305,12 @@ int main()
     // clear socket
     memset(&servaddr, 0, sizeof(servaddr));
 
-//    / assign IP, PORT /
+    /* assign IP, PORT */
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
     servaddr.sin_port = htons(PORT);
 
-//    / try to connect the client socket to server socket /
+    /* try to connect the client socket to server socket */
     if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) != 0)
     {
         printf("connection with the server failed...\n");
@@ -326,53 +329,3 @@ int main()
 
     return 0;
 }
-
-
-
-
-//
-///* This clients connects, sends a text and disconnects */
-//int main()
-//{
-//    int sockfd;
-//    struct sockaddr_in servaddr;
-//
-//    /* Socket creation */
-//    sockfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-//    if (sockfd == -1)
-//    {
-//        printf("CLIENT: socket creation failed...\n");
-//        return -1;
-//    }
-//    else
-//    {
-//        printf("CLIENT: Socket successfully created..\n");
-//    }
-//
-//    // clear socket
-//    memset(&servaddr, 0, sizeof(servaddr));
-//
-//    /* assign IP, PORT */
-//    servaddr.sin_family = AF_INET;
-//    servaddr.sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
-//    servaddr.sin_port = htons(PORT);
-//
-//    /* try to connect the client socket to server socket */
-//    if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) != 0)
-//    {
-//        printf("connection with the server failed...\n");
-//        return -1;
-//    }
-//
-//    printf("connected to the server..\n");
-//
-//
-//
-//    thread th1(READ, sockfd);
-//    thread th2(WRITE, sockfd);
-//
-//    th1.join();
-//    th2.join();
-//
-//    return 0;
-//}
