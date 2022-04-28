@@ -24,11 +24,11 @@ using namespace std;
 /*Multi threading*/
 #include <thread>
 
-#define SERVER_ADDRESS "127.0.0.1" /* server IP */
+//#define SERVER_ADDRESS "127.0.0.1" /* server IP */
 //#define PORT 8000
 
-//#define PORT 45111            /* port */
-//#define SERVER_ADDRESS "5.253.235.219" /* IP, only IPV4 support  */
+//#define PORT 45012            /* port */
+#define SERVER_ADDRESS "5.253.235.219" /* IP, only IPV4 support  */
 
 
 
