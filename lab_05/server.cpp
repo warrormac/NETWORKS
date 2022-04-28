@@ -22,7 +22,7 @@
 
 /* server parameters */
 
-#define SERV_PORT 8000             /* port */
+//#define SERV_PORT 8000             /* port */
 #define SERV_HOST_ADDR "127.0.0.1" /* IP, only IPV4 support  */
 
 //#define SERV_PORT 45011            /* port */
@@ -196,6 +196,7 @@ void READ(int connfd)
             int file_size = atoi(&buff_rx[0]);
 
             cout<<"\nFileSize: "<<file_size<<endl;
+            cout<<"\nFileNAme: "<<fileName<<endl;
 
             sendFileByNick(connfd,nick,fileName,file_size);
 
@@ -294,6 +295,9 @@ int main() /* input arguments are not used */
     unsigned int len;   /* length of client address */
     struct sockaddr_in servaddr, client;
 
+    int SERV_PORT;
+    cout<<"Inster Puerto: ";
+    cin>>SERV_PORT;
 
 
     /* socket creation */

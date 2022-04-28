@@ -109,12 +109,10 @@ void READ(int sockfd){
             int file_size = atoi(&buff_rx[0]);
 
 
-            cout<<"\nMyFilesize : "<<file_size<<endl;
-
             //read bytes
             char *buffer;
             int SIZE = 1024;
-            fileName = "MM" + fileName;
+            fileName = "./recibidos/" + fileName;
 
             ofstream file;
             file.open(fileName , ios::out);
@@ -258,7 +256,6 @@ void WRITE(int sockfd){
                 string nick , msg;
                 splitNickMsg(buff_tx,nick,msg);
                 buff_tx = "D" + zeros(msg.size(),3) + msg + zeros(nick.size(),2) + nick ;
-            cout<<"\nenviaste: "<<buff_tx<<"\n";
             }else if( buff_tx == "L"){
                 //list clients request
                 buff_tx = "L000";
@@ -287,6 +284,7 @@ int main()
     struct sockaddr_in servaddr;
     cout<<"ingrese Puerto: ";
     cin>>PORT;
+    cin.ignore();
 //    / Socket creation /
     sockfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sockfd == -1)
